@@ -5,6 +5,9 @@
 #include <string>
 #include <vector>
 
+#define LOADBMP_IMPLEMENTATION
+#include "LoadBMP/loadbmp.h"
+
 struct Point {
   unsigned int x;
   unsigned int y;
@@ -71,6 +74,7 @@ Line::~Line() {}
 
 int main(int argc, char const* argv[]) {
   std::array<std::array<unsigned int, 1000>, 1000> canvas;
+  unsigned char pixels[1000 * 1000 * 3];
   std::vector<Line> lines;
 
   for (size_t i = 0; i < 1000; i++) {
@@ -120,9 +124,18 @@ int main(int argc, char const* argv[]) {
 
   for (size_t i = 0; i < 1000; i++) {
     for (size_t j = 0; j < 1000; j++) {
+      size_t pix_pos = i * 3;
+      size_t colum_pos = j * 1000 * 3;
       if (canvas[j][i] == 0) {
         std::cout << '.';
+        pixels[colum_pos + pix_pos] = 0x00;
+        pixels[colum_pos + pix_pos + 1] = 0x00;
+        pixels[colum_pos + pix_pos + 2] = 0x00;
       } else {
+        pixels[colum_pos + pix_pos] = (canvas[j][i] != 1) * canvas[j][i] * 100;
+        pixels[colum_pos + pix_pos + 1] =
+            (canvas[j][i] != 1) * canvas[j][i] * 100 + (canvas[j][i] == 1) * 50;
+        pixels[colum_pos + pix_pos + 2] = canvas[j][i] * 100;
         std::cout << canvas[j][i];
       }
 
@@ -134,6 +147,11 @@ int main(int argc, char const* argv[]) {
   }
 
   std::cout << tot << std::endl;
+
+  unsigned int err =
+      loadbmp_encode_file("image.bmp", pixels, 1000, 1000, LOADBMP_RGB);
+
+  if (err) printf("LoadBMP Load Error: %u\n", err);
 
   return 0;
 }

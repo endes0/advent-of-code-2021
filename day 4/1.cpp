@@ -147,7 +147,7 @@ int main(int argc, char const* argv[]) {
       if (boards[i].has_alreay_checked()) {
         continue;
       }
-      
+
       boards[i].bingo(num);
       if (boards[i].has_win()) {
         std::cout << " = " << i << " = " << std::endl;

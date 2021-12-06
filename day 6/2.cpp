@@ -114,8 +114,8 @@ int main(int argc, char const *argv[]) {
           static_cast<float>(fishs[j].how_many()) /
           static_cast<float>(total_fish /
                              ((static_cast<float>(i) * (10.0 / 300.0)) + 1));
-      if (atenuator < 0.05) {
-        atenuator = 0.05;
+      if (atenuator < 0.1) {
+        atenuator = 0.1;
       }
 
       if (fishs[j].is_spawning()) {

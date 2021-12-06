@@ -1,3 +1,5 @@
+#include <math.h>
+
 #include <array>
 #include <iostream>
 #include <set>
@@ -11,43 +13,27 @@ class Fish {
  private:
   unsigned int timer_;
   unsigned long long multiplier_;
-  // bool first_cycle = true;
 
  public:
-  Fish(unsigned int timer, unsigned long multiplier, unsigned char r,
-       unsigned char g, unsigned char b);
+  Fish(unsigned int timer, unsigned long multiplier);
   Fish();
   ~Fish();
 
   void next_day();
   bool is_spawning();
   unsigned long long how_many();
-
-  unsigned char r_;
-  unsigned char g_;
-  unsigned char b_;
 };
 
 Fish::Fish() { timer_ = 8; }
 
-Fish::Fish(unsigned int timer, unsigned long multiplier, unsigned char r,
-           unsigned char g, unsigned char b) {
+Fish::Fish(unsigned int timer, unsigned long multiplier) {
   timer_ = timer;
   multiplier_ = multiplier;
-  // first_cycle = false;
-
-  r_ = r;
-  g_ = g;
-  b_ = b;
 }
 
 Fish::~Fish() {}
 
 void Fish::next_day() {
-  /*if (first_cycle) {
-    first_cycle = false;
-    return;
-  }*/
   if (timer_ == 0) {
     timer_ = 6;
     return;
@@ -60,7 +46,8 @@ bool Fish::is_spawning() { return timer_ == 0; }
 unsigned long long Fish::how_many() { return multiplier_; }
 
 int main(int argc, char const *argv[]) {
-  unsigned char pixels[300 * 300 * 3];
+  // 1 pixel = 1000 m³ aprox
+  unsigned char pixels[1161 * 1161 * 3];
 
   for (size_t i = 0; i < 300 * 300 * 3; i++) {
     pixels[i] = 0;
@@ -68,6 +55,7 @@ int main(int argc, char const *argv[]) {
 
   std::vector<Fish> fishs;
   unsigned long long total_fish = 0;
+  unsigned long long last_filled = 0;
 
   std::string num;
   std::multiset<unsigned int> same;
@@ -75,13 +63,6 @@ int main(int argc, char const *argv[]) {
     same.insert(std::stoi(num));
     total_fish++;
   }
-
-  std::array<std::array<unsigned char, 3>, 5> colors{{{0xFF, 0x00, 0x00},
-                                                      {0x00, 0xFF, 0x00},
-                                                      {0x00, 0x00, 0xFF},
-                                                      {0x7F, 0x7F, 0x00},
-                                                      {0x00, 0x7F, 0x7F}}};
-  size_t color_i = 0;
 
   unsigned int old = 0;
   int mult = 1;
@@ -91,65 +72,73 @@ int main(int argc, char const *argv[]) {
       old = fish;
       first_cycle = false;
     } else if (old != fish) {
-      fishs.push_back(Fish(old, mult, colors[color_i][0], colors[color_i][1],
-                           colors[color_i][2]));
+      fishs.push_back(Fish(old, mult));
       mult = 1;
       old = fish;
 
-      color_i++;
     } else {
       mult++;
     }
   }
-  fishs.push_back(Fish(old, mult, colors[color_i][0], colors[color_i][1],
-                       colors[color_i][2]));
+  fishs.push_back(Fish(old, mult));
 
   for (size_t i = 0; i < 298; i++) {
     size_t until = fishs.size();
     unsigned long long mult = 0;
 
-    unsigned char new_r = 0, new_g = 0, new_b = 0;
     for (size_t j = 0; j < until; j++) {
-      float atenuator =
-          static_cast<float>(fishs[j].how_many()) /
-          static_cast<float>(total_fish /
-                             ((static_cast<float>(i) * (10.0 / 300.0)) + 1));
-      if (atenuator < 0.1) {
-        atenuator = 0.1;
-      }
-
       if (fishs[j].is_spawning()) {
         mult += fishs[j].how_many();
-
-        new_r += fishs[j].r_;  //* atenuator;
-        new_g += fishs[j].g_;  //* atenuator;
-        new_b += fishs[j].b_;  //* atenuator;
       }
-
-      size_t pix_pos = j * 3;
-      size_t colum_pos = i * 300 * 3;
-
-      pixels[colum_pos + pix_pos] = fishs[j].r_ * atenuator;
-      pixels[colum_pos + pix_pos + 1] = fishs[j].g_ * atenuator;
-      pixels[colum_pos + pix_pos + 2] = fishs[j].b_ * atenuator;
 
       fishs[j].next_day();
     }
     if (mult > 0) {
-      fishs.push_back(Fish(8, mult, new_r, new_g, new_b));
+      fishs.push_back(Fish(8, mult));
       total_fish += mult;
-
-      new_r = 0;
-      new_g = 0;
-      new_b = 0;
     }
+
+    // 1 fish (aprox 15 x 5 x 1 cms) is 0.000075 m³
+    // So there will be aprox 13 333 333 fishes for pixel
+
+    for (unsigned long long j = last_filled;
+         j < total_fish / 13333333 && j < 1161 * 1161; j++) {
+      size_t pix_pos = j * 3;
+
+      // Lets make colors with the day
+      //float h = (i % 3 == 1) * i + (i % 3 == 2) * ((i+60) % 360) + (i % 3 == 0) * ((i-60) % 360);
+      float h = (i-120)/180.0 * 360;
+      float s = ((100-i*0.15)) / 100.0;
+      float v = ((i % 2 == 1) * 60.0 + (i % 2 == 0) * 40.0) / 100.0;
+      float C = s * v;
+      float X = C * (1 - fabs(fmod(h / 60.0, 2.0) - 1));
+      float m = v - C;
+      float r, g, b;
+      if (h >= 0 && h < 60) {
+        r = C, g = X, b = 0;
+      } else if (h >= 60 && h < 120) {
+        r = X, g = C, b = 0;
+      } else if (h >= 120 && h < 180) {
+        r = 0, g = C, b = X;
+      } else if (h >= 180 && h < 240) {
+        r = 0, g = X, b = C;
+      } else if (h >= 240 && h < 300) {
+        r = X, g = 0, b = C;
+      } else {
+        r = C, g = 0, b = X;
+      }
+      pixels[pix_pos] = (r + m) * 255;
+      pixels[pix_pos + 1] = (g + m) * 255;
+      pixels[pix_pos + 2] = (b + m) * 255;
+    }
+    last_filled = total_fish / 13333333;
 
     std::cout << "After " << i + 1 << " days: " << total_fish << " "
               << fishs.size() << std::endl;
   }
 
   unsigned int err =
-      loadbmp_encode_file("image.bmp", pixels, 300, 300, LOADBMP_RGB);
+      loadbmp_encode_file("image.bmp", pixels, 1161, 1161, LOADBMP_RGB);
 
   if (err) printf("LoadBMP Load Error: %u\n", err);
 

@@ -106,7 +106,6 @@ int main(int argc, char const *argv[]) {
       size_t pix_pos = j * 3;
 
       // Lets make colors with the day
-      //float h = (i % 3 == 1) * i + (i % 3 == 2) * ((i+60) % 360) + (i % 3 == 0) * ((i-60) % 360);
       float h = (i-120)/180.0 * 360;
       float s = ((100-i*0.15)) / 100.0;
       float v = ((i % 2 == 1) * 60.0 + (i % 2 == 0) * 40.0) / 100.0;

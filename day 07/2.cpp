@@ -6,7 +6,7 @@
 #include <vector>
 
 #define LOADBMP_IMPLEMENTATION
-#include "../day 5/LoadBMP/loadbmp.h"
+#include "../day 05/LoadBMP/loadbmp.h"
 
 int main(int argc, char const *argv[]) {
   unsigned char pixels[1500 * 1000 * 3];

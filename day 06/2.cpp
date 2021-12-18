@@ -7,7 +7,7 @@
 #include <vector>
 
 #define LOADBMP_IMPLEMENTATION
-#include "../day 5/LoadBMP/loadbmp.h"
+#include "../day 05/LoadBMP/loadbmp.h"
 
 class Fish {
  private:
